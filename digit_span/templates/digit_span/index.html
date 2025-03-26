@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digit Span Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+        #sequence-container {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 20px;
+            height: 50px;
+        }
+
+        #user-input {
+            font-size: 24px;
+            padding: 10px;
+            width: 50%;
+        }
+
+        #message {
+            font-size: 24px;
+            margin-top: 20px;
+        }
+
+        button {
+            font-size: 20px;
+            padding: 10px 20px;
+            margin-top: 20px;
+            background-color: #4682B4;
+            color: white;
+            border: none;
+        }
+
+        button:hover {
+            background-color: #36648B;
+        }
+    </style>
+</head>
+
+<body>
+    <audio id="background-audio" loop>
+        <source src="{% static 'digit_span/classical.mp3' %}" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+    <h1>Digit Span Test - Round {{ round_number }}</h1>
+    <p>Try to remember the digits in the order they are presented.</p>
+  
+    <div id="sequence-container"></div>
+    <input type="text" id="user-input" placeholder="Enter the sequence" />
+    <button id="submit-button">Submit</button>
+    <p id="message"></p>
+
+    <div style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+        <button id="next-round-btn" style="display: none;" onclick="nextRound()">Start Round {{ round_number|add:1}}</button>
+    </div>
+
+    <script>
+        function nextRound() {
+            bothEars = (bothEars === "false") ? "true" : "false";
+            window.location.href = "{% url 'index' %}?name=" + encodeURIComponent(playerName) + "&round_number=" + encodeURIComponent(round + 1) + "&music_type=" + encodeURIComponent(musicType) + "&both_ears=" + encodeURIComponent(bothEars);
+        }
+
+        let values = [...Array(1).fill(5), ...Array(1).fill(6), ...Array(1).fill(7)];
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+        shuffleArray(values); // Shuffle the values
+
+        let digitIndex = 0;
+        let sequence = [];
+        let correct = 0;
+        let playerName = "{{ name }}";
+        let round = {{ round_number }};
+        let musicType = "{{ music_type }}";
+        let bothEars = "{{ both_ears }}";
+
+        // Start the test on page load
+        window.onload = function () {
+            console.log(`round = ${round}, musicType = ${musicType}, bothEars = ${bothEars}`);
+            var audio = document.getElementById("background-audio");
+            audio.volume = 0.5
+            audio.play();
+            setTimeout(() => {
+                startTest();
+            }, 2000);
+        };
+
+        function allowOnlyNumbers(event) {
+            const charCode = event.charCode;
+            // Check if the key is a digit (charCode 48-57 are the numeric keys)
+            if (charCode < 48 || charCode > 57) {
+                event.preventDefault();  // Prevent the input if it's not a number
+            }
+        }
+
+        // Attach the event listener to the input field to only allow numeric characters
+        document.getElementById('user-input').addEventListener('keypress', allowOnlyNumbers);
+
+        function submitScore() {
+            fetch('/submit-score/', {  // API endpoint
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: playerName,
+                    round: round,
+                    music: musicType,
+                    bothEars: bothEars,
+                    score: correct,
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data.message);
+                    document.getElementById('message').textContent = `Game Over! You scored ${score}`;
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Start a new sequence and display it
+        function startTest() {
+            sequence = generateSequence(digitIndex);
+            digitIndex++;
+            if (digitIndex >= values.length) {
+                // End the game if all sequences have been shown
+                document.getElementById('message').textContent = `Round Over! You got ${correct} correct`;
+                submitScore()
+                document.getElementById('next-round-btn').style.display = 'block';
+                return;
+            }
+            displaySequence(sequence);
+        }
+
+        // Generate a random sequence of digits of a given length
+        function generateSequence(index) {
+            let length = values[index]
+            let seq = [];
+            for (let i = 0; i < length; i++) {
+                seq.push(Math.floor(Math.random() * 10));
+            }
+            return seq;
+        }
+
+       function displaySequence(seq) {
+            let sequenceContainer = document.getElementById('sequence-container');
+            let playerInput = document.getElementById('user-input');
+            let index = 0;
+            playerInput.disabled = true;
+            sequenceContainer.textContent = ''; // Clear the container before displaying the sequence
+            
+            // Loop through each digit in the sequence
+            function showNextDigit() {
+                if (index < seq.length) {
+                    sequenceContainer.textContent = seq[index]; // Show the current digit
+                    index++;
+
+                    // If it's the last digit, stay for 1 second, then clear
+                    if (index === seq.length) {
+                        setTimeout(() => {
+                            sequenceContainer.textContent = ' '; // Clear after 1 second
+                            playerInput.disabled = false;
+                        }, 800); // Wait for 1 second before clearing
+                    } else {
+                        // Otherwise, clear the digit after 500ms
+                        setTimeout(() => {
+                            sequenceContainer.textContent = ' '; // Clear the current digit
+                            setTimeout(showNextDigit, 200); // Wait before showing the next digit
+                        }, 400); // Show each digit for 500ms
+                    }
+                }
+            }
+
+            // Start displaying the sequence
+            showNextDigit();
+        }
+
+        document.getElementById('submit-button').onclick = submitAnswer
+
+        document.getElementById('user-input').addEventListener('keydown', function (event) {
+                if (event.key === 'Enter') {
+                    submitAnswer();
+                }
+         });
+
+        function submitAnswer() {
+            const userInput = document.getElementById('user-input').value.trim();
+            if (userInput === sequence.join('')) {
+                document.getElementById('message').textContent = 'Correct!';
+                correct++;
+            } else {
+                document.getElementById('message').textContent = 'Incorrect!';
+            }
+            document.getElementById('user-input').value = ''
+            setTimeout(startTest, 1000); // Start the next sequence after a short delay
+        };
+</script>
+</body>
+
+</html>

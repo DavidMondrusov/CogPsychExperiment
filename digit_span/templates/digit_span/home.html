@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            margin-top: 50px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            margin: 10px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            text-align: left;
+        }
+
+        input[type="text"] {
+            padding: 8px;
+            font-size: 18px;
+            width: 100%;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+
+        #startButton:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Welcome to the Digit Span Test</h1>
+
+    <hr>
+
+    <div class="container">
+        <h2>What is the Digit Span Test?</h2>
+        <p>The Digit Span Test is a measure of short-term memory capacity. You will be shown a sequence of numbers, one
+            at a time. Your task is to memorize the numbers and repeat them back in the exact order once the sequence is
+            complete.</p>
+
+        <p>In one round of the test, you will go through 12 different sequences of numbers. </p>
+
+        <p>You will complete 5 rounds of the test, and each round will be conducted under different audio conditions.
+        </p>
+    </div>
+
+    <div class="checkbox-container">
+        <label class="checkbox-label">
+            <input type="checkbox" id="understandTest" oninput="checkIfReady()" /> I understand how the Digit Span Test
+            works.
+        </label>
+    </div>
+
+    <hr>
+
+    <div class="container">
+        <h2>Headphone Test</h2>
+        <p>Click the buttons below to make sure you can hear sounds in the left and right channels.</p>
+
+        <button onclick="playSound(-1)">Test Left</button>
+        <button onclick="playSound(1)">Test Right</button>
+    </div>
+
+    <div>
+        <label class="checkbox-label">
+            <input type="checkbox" id="audioTest" oninput="checkIfReady()" /> I have completed the audio test (both left and
+            right).
+        </label>
+    </div>
+
+    <hr>
+
+    <div class="container">
+        <h2>Please Enter Your Full Name:</h2>
+        <input type="text" id="playerName" placeholder="Enter your name" oninput="checkIfReady()" />
+    </div>
+
+    <hr>
+
+    <button id="startButton" onclick="startTest()" disabled>Start Round 1</button>
+
+    <script>
+        // Function to enable the start button when the player enters a name
+        function checkIfReady() {
+            const nameEntered = document.getElementById('playerName').value.trim() !== "";
+            const audioTestChecked = document.getElementById('audioTest').checked;
+            const understandTestChecked = document.getElementById('understandTest').checked;
+            const startButton = document.getElementById('startButton');
+
+            // Enable the start button only if all conditions are met
+            startButton.disabled = !(nameEntered && audioTestChecked && understandTestChecked);
+        }
+
+        // Function to start the test and pass the data to the index page
+        function startTest() {
+            const playerName = document.getElementById('playerName').value;
+            
+            window.location.href = "{% url 'index' %}?name=" + encodeURIComponent(playerName) + "&round_number=1&music_type=&both_ears=false";
+        }
+
+        // Function to test left and right audio channels
+        function playSound(panValue) {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const panNode = audioCtx.createStereoPanner();
+
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(250, audioCtx.currentTime);
+            panNode.pan.setValueAtTime(panValue, audioCtx.currentTime); // -1 for left, 1 for right
+
+            oscillator.connect(panNode);
+            panNode.connect(audioCtx.destination);
+
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 1); // Play for 1 second
+        }
+    </script>
+
+</body>
+
+</html>
