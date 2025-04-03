@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.http import JsonResponse, HttpResponseRedirect
 from django.views.decorators.csrf import csrf_exempt
 from django.urls import reverse
+from django.templatetags.static import static
 import json
 from .models import Test, PlayerCount
 
@@ -22,6 +23,11 @@ def index(request):
     player_count_instance, created = PlayerCount.objects.get_or_create(id=1)
     player_count = player_count_instance.count
 
+    if round_number == 2 or round_number == 3:
+        both_ears = 'false'
+    else:
+        both_ears = 'true'
+
     if round_number == 1:
         music_type = 'Classical' if player_count % 2 == 0 else 'Rock'
         player_count_instance.increment()
@@ -33,12 +39,23 @@ def index(request):
         music_type = 'Classical'
     else:
         raise ValueError("Something is wrong")
+        
+    music_files = {
+        ('Classical', 'true'): 'digit_span/Classical.mp3',
+        ('Classical', 'false'): 'digit_span/ClassicalAlternating.mp3',
+        ('Rock', 'true'): 'digit_span/Rock.mp3',
+        ('Rock', 'false'): 'digit_span/RockAlternating.mp3',
+        ('None', 'true'): None,
+        ('None', 'false'): None
+    }
+    audio_file = music_files.get((music_type, both_ears))
 
     return render(request, 'digit_span/index.html', {
         'round_number': round_number,
         'name': name,
         'music_type': music_type,
         'both_ears': both_ears,
+        'audio_file': static(audio_file) if audio_file else None,
     })
 
 

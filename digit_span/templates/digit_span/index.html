@@ -46,11 +46,11 @@
 </head>
 
 <body>
+    {% load static %}
     <audio id="background-audio" loop>
-        <source src="{% static 'digit_span/classical.mp3' %}" type="audio/mpeg">
+        <source src="{% static audio_file %}" type="audio/mpeg">
         Your browser does not support the audio element.
     </audio>
-
     <h1>Digit Span Test - Round {{ round_number }}</h1>
     <p>Try to remember the digits in the order they are presented.</p>
   
@@ -61,15 +61,15 @@
 
     <div style="display: flex; justify-content: center; align-items: center; height: 100vh;">
         <button id="next-round-btn" style="display: none;" onclick="nextRound()">Start Round {{ round_number|add:1}}</button>
+        <button id="home-btn" style="display: none;" onclick="goHome()">Go Home</button>
     </div>
 
     <script>
         function nextRound() {
-            bothEars = (bothEars === "false") ? "true" : "false";
             window.location.href = "{% url 'index' %}?name=" + encodeURIComponent(playerName) + "&round_number=" + encodeURIComponent(round + 1) + "&music_type=" + encodeURIComponent(musicType) + "&both_ears=" + encodeURIComponent(bothEars);
         }
 
-        let values = [...Array(1).fill(5), ...Array(1).fill(6), ...Array(1).fill(7)];
+        let values = [...Array(4).fill(5), ...Array(4).fill(6), ...Array(4).fill(7)];
         function shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -82,19 +82,40 @@
         let sequence = [];
         let correct = 0;
         let playerName = "{{ name }}";
-        let round = {{ round_number }};
+        let round = {{ round_number }}; // Ensuring it's treated as a number
         let musicType = "{{ music_type }}";
         let bothEars = "{{ both_ears }}";
-
+        let audioFile = "{{ audio_file|default:'' }}";  // Handling possible None values
+        let inputField = document.getElementById('user-input');
+        let submitButton = document.getElementById('submit-button');
+        console.log(`round = ${round}, musicType = ${musicType}, bothEars = ${bothEars}, audioFile = ${audioFile}`);
         // Start the test on page load
         window.onload = function () {
-            console.log(`round = ${round}, musicType = ${musicType}, bothEars = ${bothEars}`);
-            var audio = document.getElementById("background-audio");
-            audio.volume = 0.5
-            audio.play();
+            submitButton.disabled = true
+            if (audioFile) {
+                let audioElement = document.getElementById("background-audio");
+                if (audioElement) {
+                    audioElement.src = audioFile;
+                    audioElement.volume = 0.5
+                    audioElement.play();
+                } else {
+                    alert("Audio element not found!");
+                }
+            }
+            let sequenceContainer = document.getElementById('sequence-container');
+            sequenceContainer.textContent = 'Ready...';
             setTimeout(() => {
-                startTest();
-            }, 2000);
+                // Display "Set"
+                sequenceContainer.textContent = 'Set...';
+                setTimeout(() => {
+                    // Display "Go" and start the sequence
+                    sequenceContainer.textContent = 'Go!';
+                    setTimeout(() => {
+                        startTest();
+                    }, 1000);  // Wait for "Go" message to stay for 1 second
+                }, 1000);  // Wait for "Set" to stay for 1 second
+            }, 1000);  // Wait for "Ready" to stay for 1 second
+            
         };
 
         function allowOnlyNumbers(event) {
@@ -132,13 +153,19 @@
 
         // Start a new sequence and display it
         function startTest() {
+            document.getElementById('message').textContent = ''
+            console.log("Test started");
             sequence = generateSequence(digitIndex);
             digitIndex++;
             if (digitIndex >= values.length) {
                 // End the game if all sequences have been shown
                 document.getElementById('message').textContent = `Round Over! You got ${correct} correct`;
                 submitScore()
-                document.getElementById('next-round-btn').style.display = 'block';
+                if (round === 5) {
+                    document.getElementById('home-btn').style.display = 'inline-block';
+                } else {
+                    document.getElementById('next-round-btn').style.display = 'inline-block';
+                }
                 return;
             }
             displaySequence(sequence);
@@ -172,13 +199,15 @@
                         setTimeout(() => {
                             sequenceContainer.textContent = ' '; // Clear after 1 second
                             playerInput.disabled = false;
+                            submitButton.disabled = false;
+                            inputField.focus();
                         }, 800); // Wait for 1 second before clearing
                     } else {
                         // Otherwise, clear the digit after 500ms
                         setTimeout(() => {
                             sequenceContainer.textContent = ' '; // Clear the current digit
                             setTimeout(showNextDigit, 200); // Wait before showing the next digit
-                        }, 400); // Show each digit for 500ms
+                        }, 550); // Show each digit for 500ms
                     }
                 }
             }
@@ -187,7 +216,7 @@
             showNextDigit();
         }
 
-        document.getElementById('submit-button').onclick = submitAnswer
+        submitButton.onclick = submitAnswer
 
         document.getElementById('user-input').addEventListener('keydown', function (event) {
                 if (event.key === 'Enter') {
@@ -196,12 +225,13 @@
          });
 
         function submitAnswer() {
+            submitButton.disabled = true
             const userInput = document.getElementById('user-input').value.trim();
             if (userInput === sequence.join('')) {
-                document.getElementById('message').textContent = 'Correct!';
+                document.getElementById('message').textContent = 'Correct';
                 correct++;
             } else {
-                document.getElementById('message').textContent = 'Incorrect!';
+                document.getElementById('message').textContent = 'Incorrect';
             }
             document.getElementById('user-input').value = ''
             setTimeout(startTest, 1000); // Start the next sequence after a short delay

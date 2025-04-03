@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+    {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home</title>
@@ -32,7 +33,15 @@
             margin: auto;
             text-align: left;
         }
-
+        .video {
+            max-width: 600px;
+            margin: auto;
+            text-align: left;
+        }
+        .video video {
+            border: 5px solid black;
+            box-sizing: border-box;
+        }
         input[type="text"] {
             padding: 8px;
             font-size: 18px;
@@ -60,10 +69,23 @@
             at a time. Your task is to memorize the numbers and repeat them back in the exact order once the sequence is
             complete.</p>
 
-        <p>In one round of the test, you will go through 12 different sequences of numbers. </p>
+        <p>In one round of the test, you will go through 12 different sequences of numbers. 
+            The digit length will be randomized for each sequence. In total 4 will be 5 digits long, 
+            4 to be 6 digits long, and 4 to be 7 digits long.
+        </p>
 
         <p>You will complete 5 rounds of the test, and each round will be conducted under different audio conditions.
         </p>
+    </div>
+
+    <div class="video">
+        <h2>Demo Video</h2>
+        <p>Watch this demo video to understand how the Digit Span Test works.</p>
+    
+        <video width="600" controls>
+            <source src="{% static 'digit_span/DemoVideo.mov' %}" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
     </div>
 
     <div class="checkbox-container">
@@ -77,7 +99,8 @@
 
     <div class="container">
         <h2>Headphone Test</h2>
-        <p>Click the buttons below to make sure you can hear sounds in the left and right channels.</p>
+        <p>Click the buttons below to make sure you can hear sounds in the left and right channels. 
+         Adjust your volume so that these sounds are loud but not too obnoxious or uncomfortable.</p>
 
         <button onclick="playSound(-1)">Test Left</button>
         <button onclick="playSound(1)">Test Right</button>
@@ -92,10 +115,11 @@
 
     <hr>
 
-    <div class="container">
-        <h2>Please Enter Your Full Name:</h2>
-        <input type="text" id="playerName" placeholder="Enter your name" oninput="checkIfReady()" />
-    </div>
+<div class="container">
+    <h2>Please Enter the Last 4 Digits of your UMID:</h2>
+    <input type="text" id="playerName" placeholder="####" oninput="checkIfReady()" pattern="\d{4}" maxlength="4"
+        title="Please enter only 4 digits" />
+</div>
 
     <hr>
 
@@ -125,13 +149,18 @@
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             const oscillator = audioCtx.createOscillator();
             const panNode = audioCtx.createStereoPanner();
+            const gainNode = audioCtx.createGain();  // Create a GainNode to control volume
 
             oscillator.type = 'sine';
             oscillator.frequency.setValueAtTime(250, audioCtx.currentTime);
             panNode.pan.setValueAtTime(panValue, audioCtx.currentTime); // -1 for left, 1 for right
 
+            // Set a fixed volume (e.g., 0.5 for 50% volume)
+            gainNode.gain.setValueAtTime(1.2, audioCtx.currentTime);
+
             oscillator.connect(panNode);
-            panNode.connect(audioCtx.destination);
+            panNode.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
 
             oscillator.start();
             oscillator.stop(audioCtx.currentTime + 1); // Play for 1 second
