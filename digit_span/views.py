@@ -50,12 +50,18 @@ def index(request):
     }
     audio_file = music_files.get((music_type, both_ears))
 
+    if audio_file:
+        audio_file = static(audio_file)
+    else:
+        audio_file = None  # Or a default audio file path
+
+
     return render(request, 'digit_span/index.html', {
         'round_number': round_number,
         'name': name,
         'music_type': music_type,
         'both_ears': both_ears,
-        'audio_file': static(audio_file) if audio_file else None,
+        'audio_file': audio_file,
     })
 
 

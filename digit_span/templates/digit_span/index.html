@@ -47,8 +47,8 @@
 
 <body>
     {% load static %}
-    <audio id="background-audio" loop>
-        <source src="{% static audio_file %}" type="audio/mpeg">
+    <audio id="background-audio" loop autoplay muted>
+	    <source src="{{ audio_file }}" type="audio/mpeg">
         Your browser does not support the audio element.
     </audio>
     <h1>Digit Span Test - Round {{ round_number }}</h1>
@@ -65,6 +65,10 @@
     </div>
 
     <script>
+	function goHome() {
+            window.location.href = "{% url 'home' %}";
+        }
+
         function nextRound() {
             window.location.href = "{% url 'index' %}?name=" + encodeURIComponent(playerName) + "&round_number=" + encodeURIComponent(round + 1) + "&music_type=" + encodeURIComponent(musicType) + "&both_ears=" + encodeURIComponent(bothEars);
         }
@@ -91,13 +95,13 @@
         console.log(`round = ${round}, musicType = ${musicType}, bothEars = ${bothEars}, audioFile = ${audioFile}`);
         // Start the test on page load
         window.onload = function () {
-            submitButton.disabled = true
+	    submitButton.disabled = true
             if (audioFile) {
                 let audioElement = document.getElementById("background-audio");
                 if (audioElement) {
                     audioElement.src = audioFile;
                     audioElement.volume = 0.5
-                    audioElement.play();
+                    audioElement.muted = false;
                 } else {
                     alert("Audio element not found!");
                 }
@@ -157,7 +161,7 @@
             console.log("Test started");
             sequence = generateSequence(digitIndex);
             digitIndex++;
-            if (digitIndex >= values.length) {
+            if (digitIndex > values.length) {
                 // End the game if all sequences have been shown
                 document.getElementById('message').textContent = `Round Over! You got ${correct} correct`;
                 submitScore()

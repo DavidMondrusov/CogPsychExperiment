@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
-
+import os
 
 
 
@@ -20,6 +20,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 STATIC_URL = '/static/'
 
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
@@ -27,9 +29,9 @@ STATIC_URL = '/static/'
 SECRET_KEY = "django-insecure-jzln-%pl!1pg117wf0lw(((thrs7k7w$@4qvnjs9)4r3r&k=ow"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['digitspan341.com', '3.145.166.16']
 
 
 # Application definition
@@ -80,8 +82,12 @@ WSGI_APPLICATION = "CogPsychProject.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "myprojectdb",
+        "USER": "myprojectuser",
+        "PASSWORD": "password",
+        "HOST": "localhost",
+        "Port": "5432",
     }
 }
 
