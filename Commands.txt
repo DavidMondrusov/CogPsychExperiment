@@ -1,0 +1,4 @@
+ssh -i ~/.ssh/CogPsychKey.pem ubuntu@3.145.166.16
+# Start aws ubuntu server
+sudo systemctl restart gunicorn
+# Reboot website after changes to django project
